@@ -7,7 +7,7 @@ test-model  256K  max  user main  ▓▓░░░░░░░░ 22%
 cursor ⬥ usage ▓▓▓▓▓▓▓▓░░ 75%   api ▓▓▓▓▓▓▓▓░░ 80%     ↑15.2k ↓2.1k $0.042
 ```
 
-The first line is **Pi**: model, context window, thinking level, user, Git branch, a green context meter, and extension statuses. The second line explicitly labels the **Cursor** subscription meters: yellow `usage` and red `api`. Token and cost totals on the right belong to the current Pi conversation branch, not your Cursor bill.
+The first line is **Pi**: model, context window, thinking level, user, Git branch, a context meter, and extension statuses. The second line explicitly labels the **Cursor** subscription meters: `usage` and `api`. Token and cost totals on the right belong to the current Pi conversation branch, not your Cursor bill.
 
 ## Install
 
@@ -39,11 +39,11 @@ If you already have `~/.pi/agent/extensions/cursor-usage-footer.ts`, move it out
 
 | Meter | Source | Meaning |
 | --- | --- | --- |
-| Green context | Pi's `ctx.getContextUsage()` | Current context usage relative to the active model's window |
-| Yellow `cursor ⬥ usage` | Cursor's `planUsage.autoPercentUsed` | Cursor's Auto-bucket subscription usage reading, as shown by its CLI |
-| Red `api` | Cursor's `planUsage.apiPercentUsed` | Cursor's named-model/API subscription usage reading, as shown by its CLI |
+| Context | Pi's `ctx.getContextUsage()` | Current context usage relative to the active model's window |
+| `cursor ⬥ usage` | Cursor's `planUsage.autoPercentUsed` | Cursor's Auto-bucket subscription usage reading, as shown by its CLI |
+| `api` | Cursor's `planUsage.apiPercentUsed` | Cursor's named-model/API subscription usage reading, as shown by its CLI |
 
-These are separate percentages reported by Cursor; they are not added together or inferred from dollar spend. Values above 100% remain visible, while the drawn bar is capped at its full width. Unknown readings show `n/a`, never a fabricated `0%`.
+All three meters use the same severity colors: **green below 50%, yellow below 80%, red from 80%**. Cursor ownership stays identified by the `cursor ⬥` label, not by a fixed color. Values above 100% remain visible, while the drawn bar is capped at its full width. Unknown readings show `n/a`, never a fabricated `0%`.
 
 Cursor is polled once on terminal session start and then at most once per minute during normal polling, including at turn end when the reading is due. Each request has a five-second timeout. No polling runs in print, JSON, or RPC modes. Restarting or replacing a session fetches a new reading immediately.
 

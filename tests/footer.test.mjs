@@ -115,6 +115,26 @@ test("renders Pi context separately from explicitly labeled Cursor subscription 
   assert.equal(app.requests.length, 1);
 });
 
+// A helper exported only for the test is implementation detail; render visible colors instead.
+for (const [name, percent, color] of [
+  ["green when empty", 0, "success"],
+  ["green before 50%", 49, "success"],
+  ["yellow at 50%", 50, "warning"],
+  ["yellow before 80%", 79, "warning"],
+  ["red at 80%", 80, "error"],
+  ["red above 100%", 101, "error"],
+]) {
+  test(`uses ${name} for every meter, including the Cursor label`, async (t) => {
+    const app = await start(t, { response: { planUsage: { autoPercentUsed: percent, apiPercentUsed: percent } } });
+    app.ctx.getContextUsage = () => ({ tokens: 1, contextWindow: 2, percent });
+    for (const line of app.lines()) {
+      assert.equal(line.includes("\x1b[32m"), color === "success");
+      assert.equal(line.includes("\x1b[33m"), color === "warning");
+      assert.equal(line.includes("\x1b[31m"), color === "error");
+    }
+  });
+}
+
 for (const width of [1, 20, 50, 120]) {
   test(`fits the footer into ${width} terminal columns`, async (t) => {
     const app = await start(t);

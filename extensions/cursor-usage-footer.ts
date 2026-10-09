@@ -1,8 +1,10 @@
 /**
  * Cursor-CLI-style footer for pi.
  *
- * Line 1: model  ctxWindow  thinking   user branch   [green context bar] %   <extension statuses>
- * Line 2: cursor ⬥ usage [yellow bar] %   api [red bar] %   ↑in ↓out $cost
+ * Line 1: model  ctxWindow  thinking   user branch   [context bar] %   <extension statuses>
+ * Line 2: cursor ⬥ usage [usage bar] %   api [usage bar] %   ↑in ↓out $cost
+ *
+ * Every meter uses the same severity colors: green below 50%, yellow below 80%, red from 80%.
  *
  * "usage"/"api" are the Cursor subscription quotas (same numbers the Cursor CLI
  * footer shows) from api2.cursor.sh DashboardService/GetCurrentPeriodUsage,
@@ -27,6 +29,12 @@ interface CursorUsage {
 function bar(pct: number, width = 10): string {
 	const filled = Math.max(0, Math.min(width, Math.round((pct * width) / 100)));
 	return "▓".repeat(filled) + "░".repeat(width - filled);
+}
+
+function usageColor(pct: number): "success" | "warning" | "error" {
+	if (pct < 50) return "success";
+	if (pct < 80) return "warning";
+	return "error";
 }
 
 const fmtTokens = (n: number) => (n < 1000 ? `${n}` : `${(n / 1000).toFixed(1)}k`);
@@ -104,7 +112,7 @@ export default function (pi: ExtensionAPI) {
 					leftParts.push(theme.fg("dim", `${userInfo().username}${branch ? ` ${branch}` : ""}`));
 					leftParts.push(
 						pct != null
-							? theme.fg("success", bar(pct)) + theme.fg("success", ` ${pct}%`)
+							? theme.fg(usageColor(pct), bar(pct)) + theme.fg(usageColor(pct), ` ${pct}%`)
 							: theme.fg("dim", "ctx n/a"),
 					);
 					for (const status of footerData.getExtensionStatuses().values()) {
@@ -115,11 +123,11 @@ export default function (pi: ExtensionAPI) {
 					// --- line 2: cursor subscription usage + session tokens ---
 					const quota = usage
 						? theme.fg("dim", "cursor ⬥ usage ") +
-							theme.fg("warning", bar(usage.auto)) +
-							theme.fg("warning", ` ${Math.round(usage.auto)}%`) +
+							theme.fg(usageColor(usage.auto), bar(usage.auto)) +
+							theme.fg(usageColor(usage.auto), ` ${Math.round(usage.auto)}%`) +
 							theme.fg("dim", "   api ") +
-							theme.fg("error", bar(usage.api)) +
-							theme.fg("error", ` ${Math.round(usage.api)}%`)
+							theme.fg(usageColor(usage.api), bar(usage.api)) +
+							theme.fg(usageColor(usage.api), ` ${Math.round(usage.api)}%`)
 						: theme.fg("dim", "cursor ⬥ usage n/a   api n/a");
 
 					let input = 0,
