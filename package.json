@@ -1,0 +1,39 @@
+{
+  "name": "pi-cursor-usage",
+  "version": "0.1.0",
+  "description": "Cursor subscription usage bars and a context meter in the Pi coding agent footer.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Hatta (https://github.com/hattapauzi)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hattapauzi/pi-cursor-usage.git"
+  },
+  "homepage": "https://github.com/hattapauzi/pi-cursor-usage#readme",
+  "bugs": {
+    "url": "https://github.com/hattapauzi/pi-cursor-usage/issues"
+  },
+  "keywords": ["pi-package", "pi-extension", "cursor", "usage", "footer"],
+  "files": ["extensions/", "README.md", "LICENSE", "CHANGELOG.md"],
+  "pi": {
+    "extensions": ["./extensions/cursor-usage-footer.ts"]
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "1.1.0",
+    "@earendil-works/pi-tui": "1.1.0",
+    "@types/node": "^22.19.0",
+    "jiti": "^2.7.0",
+    "typescript": "^5.9.3"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check": "tsc --noEmit"
+  }
+}
