@@ -105,14 +105,31 @@ test("renders Pi context separately from explicitly labeled Cursor subscription 
   const app = await start(t);
   const [context, quota] = app.lines().map(stripColors);
   assert.match(context, /test-model\s+256K\s+max/);
-  assert.match(context, /main\s+▓▓░░░░░░░░ 22%/);
+  assert.match(context, /main\s+ctx ██░░░░░░░░ 22%/);
   assert.match(context, /42 tok\/s/);
-  assert.match(quota, /^cursor ⬥ usage ▓▓▓▓▓▓▓▓░░ 75%\s+api ▓▓▓▓▓▓▓▓░░ 80%/);
+  assert.match(quota, /^cursor ⬥ usage ████████░░ 75%\s+api ████████░░ 80%/);
   assert.match(quota, /↑15\.2k ↓2\.1k \$0\.042$/);
-  assert.match(app.lines()[0], /\x1b\[32m▓▓░/);
-  assert.match(app.lines()[1], /\x1b\[33m▓▓▓/);
-  assert.match(app.lines()[1], /\x1b\[31m▓▓▓/);
   assert.equal(app.requests.length, 1);
+});
+
+test("colors Cursor quota meters from the displayed rounded percentage", async (t) => {
+  const app = await start(t, { response: { planUsage: { autoPercentUsed: 49.6, apiPercentUsed: 79.6 } } });
+  const quota = app.lines()[1];
+  assert.match(stripColors(quota), /usage █████░░░░░ 50%/);
+  assert.match(stripColors(quota), /api ████████░░ 80%/);
+  assert.match(quota, /\x1b\[33m█/);
+  assert.match(quota, /\x1b\[31m█/);
+  assert.equal(quota.includes("\x1b[32m"), false);
+});
+
+test("draws solid Cursor-CLI bars with dim empty cells, not dithered shade glyphs", async (t) => {
+  const app = await start(t);
+  const [context, quota] = app.lines();
+  assert.equal(stripColors(context).includes("▓"), false);
+  assert.equal(stripColors(quota).includes("▓"), false);
+  assert.match(context, /\x1b\[32m██\x1b\[0m\x1b\[90m░░░░░░░░/);
+  assert.match(quota, /\x1b\[33m████████\x1b\[0m\x1b\[90m░░/);
+  assert.match(quota, /\x1b\[31m████████\x1b\[0m\x1b\[90m░░/);
 });
 
 // A helper exported only for the test is implementation detail; render visible colors instead.
@@ -142,6 +159,13 @@ for (const width of [1, 20, 50, 120]) {
   });
 }
 
+test("pads every footer line to the pane width so a Cursor turn cannot leave leftovers", async (t) => {
+  const app = await start(t);
+  for (const width of [20, 50, 80, 120]) {
+    for (const line of app.lines(width)) assert.equal(visibleWidth(line), width);
+  }
+});
+
 test("shows unknown context without fabricating a zero percentage", async (t) => {
   const app = await start(t);
   app.ctx.getContextUsage = () => ({ tokens: null, contextWindow: 262144, percent: null });
@@ -170,7 +194,7 @@ for (const [name, planUsage] of [
 
 test("bounds the bars when Cursor reports usage above 100%", async (t) => {
   const app = await start(t, { response: { planUsage: { autoPercentUsed: 125, apiPercentUsed: 150 } } });
-  assert.match(stripColors(app.lines()[1]), /usage ▓{10} 125%\s+api ▓{10} 150%/);
+  assert.match(stripColors(app.lines()[1]), /usage █{10} 125%\s+api █{10} 150%/);
 });
 
 for (const token of [undefined, ""]) {

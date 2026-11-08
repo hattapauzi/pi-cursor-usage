@@ -1,6 +1,6 @@
 {
   "name": "pi-cursor-usage",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Cursor subscription usage bars and a context meter in the Pi coding agent footer.",
   "type": "module",
   "license": "MIT",
@@ -13,10 +13,23 @@
   "bugs": {
     "url": "https://github.com/hattapauzi/pi-cursor-usage/issues"
   },
-  "keywords": ["pi-package", "pi-extension", "cursor", "usage", "footer"],
-  "files": ["extensions/", "README.md", "LICENSE", "CHANGELOG.md"],
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "cursor",
+    "usage",
+    "footer"
+  ],
+  "files": [
+    "extensions/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "pi": {
-    "extensions": ["./extensions/cursor-usage-footer.ts"]
+    "extensions": [
+      "./extensions/cursor-usage-footer.ts"
+    ]
   },
   "engines": {
     "node": ">=22.19.0"

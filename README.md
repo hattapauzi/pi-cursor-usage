@@ -3,11 +3,11 @@
 See your **Cursor subscription usage** in Pi without opening Cursor Agent just to check it.
 
 ```text
-test-model  256K  max  user main  ▓▓░░░░░░░░ 22%
-cursor ⬥ usage ▓▓▓▓▓▓▓▓░░ 75%   api ▓▓▓▓▓▓▓▓░░ 80%     ↑15.2k ↓2.1k $0.042
+test-model  256K  max  user main  ctx ██░░░░░░░░ 22%
+cursor ⬥ usage ████████░░ 75%   api ████████░░ 80%     ↑15.2k ↓2.1k $0.042
 ```
 
-The first line is **Pi**: model, context window, thinking level, user, Git branch, a context meter, and extension statuses. The second line explicitly labels the **Cursor** subscription meters: `usage` and `api`. Token and cost totals on the right belong to the current Pi conversation branch, not your Cursor bill.
+The first line is **Pi**: model, context window, thinking level, user, Git branch, a `ctx` meter, and extension statuses. The second line explicitly labels the **Cursor** subscription meters: `usage` and `api`. Token and cost totals on the right belong to the current Pi conversation branch, not your Cursor bill.
 
 ## Install
 
@@ -22,12 +22,12 @@ Requires Pi with the `@earendil-works` extension APIs, Node.js 22.19 or newer, a
 2. Install the Pi package from GitHub:
 
    ```sh
-   pi install git:github.com/hattapauzi/pi-cursor-usage@v0.1.0
+   pi install git:github.com/hattapauzi/pi-cursor-usage@v0.1.1
    ```
 
 3. Restart Pi, or run `/reload` in an existing session.
 
-For unpinned updates, install without `@v0.1.0` and use `pi update git:github.com/hattapauzi/pi-cursor-usage`. A tagged install stays pinned; install a newer tag explicitly to upgrade.
+For unpinned updates, install without `@v0.1.1` and use `pi update git:github.com/hattapauzi/pi-cursor-usage`. A tagged install stays pinned; install a newer tag explicitly to upgrade.
 
 This repository follows the [Pi package format](https://pi.dev/docs/latest/packages). It is distributed through GitHub for now, **not npm or the Pi package gallery**. The manifest includes `pi-package` for future npm discovery.
 
@@ -39,7 +39,7 @@ If you already have `~/.pi/agent/extensions/cursor-usage-footer.ts`, move it out
 
 | Meter | Source | Meaning |
 | --- | --- | --- |
-| Context | Pi's `ctx.getContextUsage()` | Current context usage relative to the active model's window |
+| `ctx` | Pi's `ctx.getContextUsage()` | Current context usage relative to the active model's window |
 | `cursor ⬥ usage` | Cursor's `planUsage.autoPercentUsed` | Cursor's Auto-bucket subscription usage reading, as shown by its CLI |
 | `api` | Cursor's `planUsage.apiPercentUsed` | Cursor's named-model/API subscription usage reading, as shown by its CLI |
 
@@ -72,12 +72,12 @@ This is an independent integration, not an official Cursor product. The endpoint
 - **`usage n/a` / `api n/a`:** Check your connection and that the credential file exists. Run `cursor-agent login` to reauthenticate if needed; the extension rereads the token on the next poll. A rejected login, malformed response, or unavailable endpoint also produces `n/a`.
 - **`ctx n/a`:** Pi does not yet have a current context estimate, for example immediately after compaction. It will update when Pi has a reading.
 - **The footer is missing or changed:** Pi has one custom-footer slot. Disable other extensions that call `ctx.ui.setFooter()`. Ordinary `setStatus()` entries are preserved, but may be truncated on narrow terminals.
-- **Glyphs look wrong:** Use a terminal font supporting `▓`, `░`, and `⬥`.
+- **Glyphs look wrong:** Use a terminal font supporting `█`, `░`, and `⬥`. Inside tmux, resize once after a Cursor turn if a previous frame left junk; this footer now pads each line to the pane width so that cannot stick.
 
 ## Remove
 
 ```sh
-pi remove git:github.com/hattapauzi/pi-cursor-usage@v0.1.0
+pi remove git:github.com/hattapauzi/pi-cursor-usage@v0.1.1
 ```
 
 Then restart Pi or run `/reload` to restore the built-in footer. This does not remove your Cursor login.

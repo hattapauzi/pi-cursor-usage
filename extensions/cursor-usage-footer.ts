@@ -1,10 +1,11 @@
 /**
  * Cursor-CLI-style footer for pi.
  *
- * Line 1: model  ctxWindow  thinking   user branch   [context bar] %   <extension statuses>
+ * Line 1: model  ctxWindow  thinking   user branch   ctx [bar] %   <extension statuses>
  * Line 2: cursor ⬥ usage [usage bar] %   api [usage bar] %   ↑in ↓out $cost
  *
- * Every meter uses the same severity colors: green below 50%, yellow below 80%, red from 80%.
+ * Meters match Cursor CLI: solid █ fill, dim ░ remainder. Severity colors:
+ * green below 50%, yellow below 80%, red from 80%.
  *
  * "usage"/"api" are the Cursor subscription quotas (same numbers the Cursor CLI
  * footer shows) from api2.cursor.sh DashboardService/GetCurrentPeriodUsage,
@@ -26,15 +27,39 @@ interface CursorUsage {
 	api: number;
 }
 
-function bar(pct: number, width = 10): string {
-	const filled = Math.max(0, Math.min(width, Math.round((pct * width) / 100)));
-	return "▓".repeat(filled) + "░".repeat(width - filled);
-}
+type FooterTheme = { fg: (color: "success" | "warning" | "error" | "dim" | "accent", text: string) => string };
 
 function usageColor(pct: number): "success" | "warning" | "error" {
 	if (pct < 50) return "success";
 	if (pct < 80) return "warning";
 	return "error";
+}
+
+function meter(pct: number, color: "success" | "warning" | "error", theme: FooterTheme, width = 10): string {
+	const filled = Math.max(0, Math.min(width, Math.round((pct * width) / 100)));
+	// Cursor CLI uses solid █ + dim ░. Shade ▓ is dithered (Kitty draws a noisy
+	// histogram) and East-Asian-ambiguous, so tmux panes wrap until SIGWINCH.
+	return theme.fg(color, "█".repeat(filled)) + theme.fg("dim", "░".repeat(width - filled));
+}
+
+function labeledMeter(label: string, pct: number, theme: FooterTheme): string {
+	const n = Math.round(pct);
+	const color = usageColor(n);
+	return theme.fg("dim", label) + meter(n, color, theme) + theme.fg(color, ` ${n}%`);
+}
+
+function padLine(text: string, width: number): string {
+	return `\x1b[0m${truncateToWidth(text, width, "", true)}`;
+}
+
+function joinFitting(parts: string[], width: number): string {
+	let out = "";
+	for (const part of parts) {
+		const next = out ? `${out}  ${part}` : part;
+		if (out && visibleWidth(next) > width) break;
+		out = next;
+	}
+	return padLine(out, width);
 }
 
 const fmtTokens = (n: number) => (n < 1000 ? `${n}` : `${(n / 1000).toFixed(1)}k`);
@@ -110,24 +135,15 @@ export default function (pi: ExtensionAPI) {
 					if (cw) leftParts.push(theme.fg("dim", `${Math.round(cw / 1024)}K`));
 					if (thinking) leftParts.push(theme.fg("dim", String(thinking)));
 					leftParts.push(theme.fg("dim", `${userInfo().username}${branch ? ` ${branch}` : ""}`));
-					leftParts.push(
-						pct != null
-							? theme.fg(usageColor(pct), bar(pct)) + theme.fg(usageColor(pct), ` ${pct}%`)
-							: theme.fg("dim", "ctx n/a"),
-					);
+					leftParts.push(pct != null ? labeledMeter("ctx ", pct, theme) : theme.fg("dim", "ctx n/a"));
 					for (const status of footerData.getExtensionStatuses().values()) {
 						if (status) leftParts.push(status);
 					}
-					const line1 = truncateToWidth(leftParts.join("  "), width);
+					const line1 = joinFitting(leftParts, width);
 
 					// --- line 2: cursor subscription usage + session tokens ---
 					const quota = usage
-						? theme.fg("dim", "cursor ⬥ usage ") +
-							theme.fg(usageColor(usage.auto), bar(usage.auto)) +
-							theme.fg(usageColor(usage.auto), ` ${Math.round(usage.auto)}%`) +
-							theme.fg("dim", "   api ") +
-							theme.fg(usageColor(usage.api), bar(usage.api)) +
-							theme.fg(usageColor(usage.api), ` ${Math.round(usage.api)}%`)
+						? theme.fg("dim", "cursor ⬥ ") + labeledMeter("usage ", usage.auto, theme) + labeledMeter("   api ", usage.api, theme)
 						: theme.fg("dim", "cursor ⬥ usage n/a   api n/a");
 
 					let input = 0,
@@ -142,8 +158,8 @@ export default function (pi: ExtensionAPI) {
 						}
 					}
 					const stats = theme.fg("dim", `↑${fmtTokens(input)} ↓${fmtTokens(output)} $${cost.toFixed(3)}`);
-					const pad = " ".repeat(Math.max(1, width - visibleWidth(quota) - visibleWidth(stats)));
-					const line2 = truncateToWidth(quota + pad + stats, width);
+					const gap = Math.max(1, width - visibleWidth(quota) - visibleWidth(stats));
+					const line2 = padLine(quota + " ".repeat(gap) + stats, width);
 
 					return [line1, line2];
 				},
